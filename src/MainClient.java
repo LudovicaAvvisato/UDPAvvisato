@@ -1,39 +1,40 @@
-package Client;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
 public class MainClient {
     public static void main(String[] args) {
-        Scanner tastiera = new Scanner(System.in);
+        int port = 6789; // Porta del server
+        byte[] buffer = new byte[256];
 
-        while (true) {
-            System.out.print("Inserisci messaggio da inviare: ");
-            String testo = tastiera.nextLine();
+        try (DatagramSocket dSocket = new DatagramSocket();
+             Scanner sc = new Scanner(System.in)) {
 
-            if (testo.equalsIgnoreCase("")) break;
+            InetAddress serverAddress = InetAddress.getLocalHost();
+            System.out.println("Indirizzo del server trovato: " + serverAddress);
 
-            try (Socket socket = new Socket("localhost", 3000);
-                 PrintWriter pw = new PrintWriter(socket.getOutputStream(), true)) {
+            System.out.print("Inserisci il messaggio da inviare: ");
+            String message = sc.nextLine();
 
-                pw.println(testo);
-                pw.flush();
-                System.out.println("Inviato correttamente.");
+            // Invio del pacchetto
+            DatagramPacket outPacket = new DatagramPacket(message.getBytes(), message.length(), serverAddress, port);
+            dSocket.send(outPacket);
 
-                //Blocco di lettura
+            // Ricezione della risposta
+            DatagramPacket inPacket = new DatagramPacket(buffer, buffer.length);
+            dSocket.receive(inPacket);
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                String messaggio = in.readLine();
-                if (messaggio != null) {
-                    System.out.println(messaggio);
-                }
+            String response = new String(inPacket.getData(), 0, inPacket.getLength());
+            System.out.println("Risposta dal server: " + response);
 
-            } catch (IOException e) {
-                System.out.println("Server non raggiungibile. Assicurati che il Server sia avviato.");
-                break;
-            }
+        } catch (UnknownHostException e) {
+            System.err.println("Errore DNS: " + e.getMessage());
+        } catch (SocketException e) {
+            System.err.println("Errore Socket: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Errore di I/O: " + e.getMessage());
         }
-        tastiera.close();
-        System.out.println("Client chiuso.");
+
+        System.out.println("Comunicazione chiusa!");
     }
-}//
+}
