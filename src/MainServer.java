@@ -1,38 +1,51 @@
-
 import java.io.*;
 import java.net.*;
 
 public class MainServer {
     public static void main(String[] args) {
         int port = 6789;
+        String mGroup = "230.0.0.1";
+        int mPort = 6790;
 
-        try (DatagramSocket dSocket = new DatagramSocket(port)) {
-            System.out.println("Server in ascolto sulla porta " + port + "...");
+        try (DatagramSocket serverSocket = new DatagramSocket(port)) {
+            System.out.println("[SERVER] In ascolto sulla porta " + port + "...");
 
-            while (true) {
-                byte[] bufferIn = new byte[256];
+            // 1. ECHO
+            byte[] buffer = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            serverSocket.receive(packet);
+            System.out.println("[SERVER] Ricevuto Echo, rispondo...");
+            serverSocket.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
 
-                // Ricezione
-                DatagramPacket inPacket = new DatagramPacket(bufferIn, bufferIn.length);
-                dSocket.receive(inPacket);
+            // Piccola pausa per dare tempo al client di mettersi in ascolto multicast
+            Thread.sleep(500);
 
-                InetAddress clientAddress = inPacket.getAddress();
-                int clientPort = inPacket.getPort();
-                String messageIn = new String(inPacket.getData(), 0, inPacket.getLength());
+            // 2. MULTICAST
+            InetAddress group = InetAddress.getByName(mGroup);
+            String alert = "VIA_AI_DATI";
+            byte[] alertMsg = alert.getBytes();
+            serverSocket.send(new DatagramPacket(alertMsg, alertMsg.length, group, mPort));
+            System.out.println("[SERVER] Segnale Multicast inviato.");
 
-                System.out.println("CLIENT [" + clientAddress + ":" + clientPort + "]> " + messageIn);
+            // 3. RICEZIONE OGGETTO
+            serverSocket.receive(packet); // Riceve il pacchetto dello studente
 
-                // Risposta (Echo)
-                String response = "Messaggio ricevuto: " + messageIn;
-                byte[] bufferOut = response.getBytes();
-                DatagramPacket outPacket = new DatagramPacket(bufferOut, bufferOut.length, clientAddress, clientPort);
-                dSocket.send(outPacket);
+            // IMPORTANTE: Creiamo il buffer esatto per i dati ricevuti
+            byte[] data = new byte[packet.getLength()];
+            System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
+
+            try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
+                Studente s = (Studente) ois.readObject();
+                System.out.println("[SERVER] Studente ricevuto: " + s.nome + " " + s.cognome + " (" + s.matricola + ")");
             }
 
-        } catch (BindException e) {
-            System.err.println("Errore: porta già in uso.");
-        } catch (IOException e) {
-            System.err.println("Errore di I/O: " + e.getMessage());
+            // 4. RISPOSTA FINALE
+            String risposta = "Ricezione completata correttamente.";
+            byte[] respBuf = risposta.getBytes();
+            serverSocket.send(new DatagramPacket(respBuf, respBuf.length, packet.getAddress(), packet.getPort()));
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
