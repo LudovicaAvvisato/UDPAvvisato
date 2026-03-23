@@ -8,13 +8,13 @@ public class MainServer {
         int mPort = 6790;
 
         try (DatagramSocket serverSocket = new DatagramSocket(port)) {
-            System.out.println("[SERVER] In ascolto sulla porta " + port + "...");
+            System.out.println("Il server è in ascolto sulla porta " + port);
 
             // 1. ECHO
             byte[] buffer = new byte[1024];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             serverSocket.receive(packet);
-            System.out.println("[SERVER] Ricevuto Echo, rispondo...");
+            //System.out.println("[SERVER] Ricevuto Echo, rispondo...");
             serverSocket.send(new DatagramPacket(packet.getData(), packet.getLength(), packet.getAddress(), packet.getPort()));
 
             // Piccola pausa per dare tempo al client di mettersi in ascolto multicast
@@ -22,10 +22,10 @@ public class MainServer {
 
             // 2. MULTICAST
             InetAddress group = InetAddress.getByName(mGroup);
-            String alert = "VIA_AI_DATI";
+            String alert = "Invio Dati";
             byte[] alertMsg = alert.getBytes();
             serverSocket.send(new DatagramPacket(alertMsg, alertMsg.length, group, mPort));
-            System.out.println("[SERVER] Segnale Multicast inviato.");
+            System.out.println("Il segnale Multicast è stato inviato.");
 
             // 3. RICEZIONE OGGETTO
             serverSocket.receive(packet); // Riceve il pacchetto dello studente
@@ -36,7 +36,7 @@ public class MainServer {
 
             try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
                 Studente s = (Studente) ois.readObject();
-                System.out.println("[SERVER] Studente ricevuto: " + s.nome + " " + s.cognome + " (" + s.matricola + ")");
+                System.out.println("Studente: " + s.nome + " " + s.cognome + " " + s.matricola);
             }
 
             // 4. RISPOSTA FINALE

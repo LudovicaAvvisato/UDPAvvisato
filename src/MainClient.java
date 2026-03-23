@@ -23,29 +23,30 @@ public class MainClient {
                 byte[] buf = new byte[1024];
                 DatagramPacket pIn = new DatagramPacket(buf, buf.length);
                 clientSocket.receive(pIn);
-                System.out.println("[CLIENT] Server online: " + new String(pIn.getData(), 0, pIn.getLength()));
+                System.out.println("Il Server è online: " + new String(pIn.getData(), 0, pIn.getLength()));
 
                 // 2. ATTESA MULTICAST
-                System.out.println("[CLIENT] In attesa del segnale multicast...");
+                System.out.println("In attesa del segnale multicast...");
                 byte[] mBuf = new byte[256];
                 DatagramPacket mPacket = new DatagramPacket(mBuf, mBuf.length);
                 mSocket.receive(mPacket);
-                System.out.println("[CLIENT] Segnale ricevuto: " + new String(mPacket.getData(), 0, mPacket.getLength()));
+                System.out.println("Segnale ricevuto: " + new String(mPacket.getData(), 0, mPacket.getLength()));
                 mSocket.leaveGroup(group);
             }
 
             // ... dopo mSocket.leaveGroup(group);
 
             Scanner in = new Scanner(System.in);
-            System.out.println("\n--- INSERIMENTO NUOVO STUDENTE ---");
+            System.out.println("\nINSERIMENTO NUOVO STUDENTE");
 
-            System.out.print("Inserisci il nome: ");
+            System.out.print("Nome: ");
             String nome = in.nextLine();
 
-            System.out.print("Inserisci il cognome: ");
+            System.out.print("Cognome: ");
             String cognome = in.nextLine();
 
-            System.out.print("Inserisci la matricola (numero): ");
+            System.out.print("Matricola (numero): ");
+
             int matricola = 0;
             try {
                 matricola = Integer.parseInt(in.nextLine());
@@ -65,17 +66,17 @@ public class MainClient {
             oos.flush();
             byte[] datiStrutturati = baos.toByteArray();
 
-            System.out.println("[CLIENT] Invio oggetto Studente...");
+            System.out.println("Invio dello studente");
             clientSocket.send(new DatagramPacket(datiStrutturati, datiStrutturati.length, srvAddr, serverPort));
 
             // 4. RICEZIONE CONFERMA
             byte[] lastBuf = new byte[1024];
             DatagramPacket pLast = new DatagramPacket(lastBuf, lastBuf.length);
             clientSocket.receive(pLast);
-            System.out.println("[CLIENT] Conferma finale: " + new String(pLast.getData(), 0, pLast.getLength()));
+            System.out.println("Conferma finale: " + new String(pLast.getData(), 0, pLast.getLength()));
 
         } catch (Exception e) {
-            System.err.println("[CLIENT ERROR] " + e.getMessage());
+            System.err.println("Errore " + e.getMessage());
             e.printStackTrace();
         }
     }
